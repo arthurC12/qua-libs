@@ -3,7 +3,7 @@ octave_introduction.py: shows the basic commands to control the octave's clock, 
 down-converters and calibration
 """
 
-from qm.QuantumMachinesManager import QuantumMachinesManager
+from qm import QuantumMachinesManager
 from qm.octave import *
 from qm.octave.octave_manager import ClockMode
 from qm.qua import *
@@ -15,23 +15,33 @@ from qualang_tools.units import unit
 # Flags to switch between different modes defined below
 check_up_converters = False
 check_triggers = False
-check_down_converters = False
+check_down_converters = True
 calibration = False
 
 #################################
 # Step 0 : Octave configuration #
 #################################
-qop_ip = "172.0.0.1"
+qop_ip = "192.168.20.108"
 cluster_name = "Cluster_1"
-opx_port = None
+opx_port = 11254
 
-octave_port = 11250  # Must be 11xxx, where xxx are the last three digits of the Octave IP address
+octave_port = 11253  # Must be 11xxx, where xxx are the last three digits of the Octave IP address
 con = "con1"
 octave = "octave1"
 # The elements used to test the ports of the Octave
-elements = ["qe1", "qe2", "qe3", "qe4", "qe5"]
+elements = [
+    "qe1",
+            "qe2",
+    # "qe3",
+     # "qe4",
+    # "qe5"
+    ]
 IF = 50e6  # The IF frequency
-LO = 6e9  # The LO frequency
+LO_1 = 6.000e9  # The LO frequency of qe1
+LO_2 = 6.000e9  # The LO frequency of qe2
+LO_3 = 6.010e9  # The LO frequency of qe3
+LO_4 = 6.000e9  # The LO frequency of qe4
+LO_5 = 6.000e9  # The LO frequency of qe5
 # The configuration used here
 config = {
     "version": 1,
@@ -154,48 +164,48 @@ config = {
         octave: {
             "RF_outputs": {
                 1: {
-                    "LO_frequency": LO,
+                    "LO_frequency": LO_1,
                     "LO_source": "internal",  # can be external or internal. internal is the default
-                    "output_mode": "always_on",  # can be: "always_on" / "always_off"/ "triggered" / "triggered_reversed". "always_off" is the default
+                    "output_mode": "always_off",  # can be: "always_on" / "always_off"/ "triggered" / "triggered_reversed". "always_off" is the default
                     "gain": 0,  # can be in the range [-20 : 0.5 : 20]dB
                 },
                 2: {
-                    "LO_frequency": LO,
+                    "LO_frequency": LO_2,
                     "LO_source": "internal",
-                    "output_mode": "always_on",
+                    "output_mode": "always_off",
                     "gain": 0,
                 },
                 3: {
-                    "LO_frequency": LO,
+                    "LO_frequency": LO_3,
                     "LO_source": "internal",
-                    "output_mode": "always_on",
+                    "output_mode": "always_off",
                     "gain": 0,
                 },
                 4: {
-                    "LO_frequency": LO,
+                    "LO_frequency": LO_4,
                     "LO_source": "internal",
-                    "output_mode": "always_on",
+                    "output_mode": "always_off",
                     "gain": 0,
                 },
                 5: {
-                    "LO_frequency": LO,
+                    "LO_frequency": LO_5,
                     "LO_source": "internal",
-                    "output_mode": "always_on",
+                    "output_mode": "always_off",
                     "gain": 0,
                 },
             },
             "RF_inputs": {
                 1: {
-                    "LO_frequency": LO,
+                    "LO_frequency": LO_1,
                     "LO_source": "internal",  # internal is the default
-                    "IF_mode_I": "direct",  # can be: "direct" / "mixer" / "envelope" / "off". direct is default
-                    "IF_mode_Q": "direct",
+                    "IF_mode_I": "mixer",  # can be: "direct" / "mixer" / "envelope" / "off". direct is default
+                    "IF_mode_Q": "mixer",
                 },
                 2: {
-                    "LO_frequency": LO,
-                    "LO_source": "external",  # external is the default
-                    "IF_mode_I": "direct",
-                    "IF_mode_Q": "direct",
+                    "LO_frequency": LO_2,
+                    "LO_source": "internal",  # external is the default
+                    "IF_mode_I": "mixer",
+                    "IF_mode_Q": "mixer",
                 },
             },
             "connectivity": con,
@@ -334,7 +344,7 @@ if check_down_converters:
     # Connect RF1 -> RF1In, RF2 -> RF2In
     # Connect IFOUT1 -> AI1 , IFOUT2 -> AI2
     check_down_converter_1 = True
-    check_down_converter_2 = False
+    check_down_converter_2 = True
     u = unit()
     if check_down_converter_1:
         # Reduce the Octave gain to avoid saturating the OPX ADC or add a 20dB attenuator
@@ -407,7 +417,7 @@ if calibration:
     # Step 5.2: Run this in order to calibrate
     for element in elements:
         print("-" * 37 + f" Calibrates {element}")
-        qm.calibrate_element(element, {LO: (IF,)})  # can provide many IFs for specific LO
+        qm.calibrate_element(element, {LO_1: (IF,)})  # can provide many IFs for specific LO
     # Step 5.3: Run these and look at the spectrum analyzer and check if you get 1 peak at LO+IF (i.e. 6.05GHz)
     print("-" * 37 + " Play after calibration")
     job = qm.execute(hello_octave)
